@@ -58,7 +58,7 @@ export default function OnboardingPage() {
   const [form, setForm] = useState<FormData>(empty);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
-  const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
   const set = (field: keyof FormData, value: unknown) =>
     setForm(p => ({ ...p, [field]: value }));
@@ -69,7 +69,7 @@ export default function OnboardingPage() {
       : [...(form[field] as string[]), val]);
 
   function validateStep(): boolean {
-    const e: Partial<Record<keyof FormData, string>> = {};
+    const e: Partial<Record<keyof FormData, string>> = {} as Partial<Record<keyof FormData, string>>;
     if (step === 0) {
       if (!form.firstName) e.firstName = 'Required';
       if (!form.lastName) e.lastName = 'Required';
