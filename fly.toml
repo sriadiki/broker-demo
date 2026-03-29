@@ -1,0 +1,28 @@
+# fly.toml app configuration file generated for broker-demo on 2026-03-28T15:16:55-05:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+# fly.toml
+app = "broker-demo"
+primary_region = "dfw"
+
+[build]
+  [build.args]
+    NEXT_PUBLIC_SUPABASE_URL = "ohttps://nmjaivevnfokuipnhqar.supabase.co"
+    NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tamFpdmV2bmZva3VpcG5ocWFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MjA4NjgsImV4cCI6MjA5MDI5Njg2OH0.vpJhGDPd9o418EZEic0QNSIAgUZST0PJVuU03BbpxKw"
+
+[env]
+  NEXT_PUBLIC_APP_URL = "https://broker-demo.fly.dev"
+
+[[services]]
+  internal_port = 3000
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
