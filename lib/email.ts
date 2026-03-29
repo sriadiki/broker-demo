@@ -65,7 +65,7 @@ export async function sendLeadEmail(lead: LeadEmailData): Promise<boolean> {
     const firstName = lead.name.split(' ')[0];
 
     await resend.emails.send({
-      from: 'ClearPath Insurance <hello@clearpath-insurance.com>',
+      from: 'onboarding@resend.dev',
       to: lead.email,
       subject: `Your ${product} estimate, ${firstName}`,
       text: body,
