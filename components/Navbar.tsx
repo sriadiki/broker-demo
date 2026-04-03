@@ -14,6 +14,7 @@ export default function Navbar() {
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate">
           <Link href="/#services" className="hover:text-ink transition-colors">Services</Link>
           <Link href="/#about" className="hover:text-ink transition-colors">About</Link>
+          <Link href="/carriers" className="hover:text-ink transition-colors">Carriers</Link>
           <Link href="/onboarding" className="hover:text-ink transition-colors">Agent Portal</Link>
           <Link href="/quote" className="btn-gold py-2 px-5">Get a Quote</Link>
         </nav>
@@ -24,6 +25,7 @@ export default function Navbar() {
       {open && (
         <div className="md:hidden bg-cream border-t border-ink/10 px-6 py-4 flex flex-col gap-4 text-sm font-medium">
           <Link href="/#services" onClick={() => setOpen(false)}>Services</Link>
+          <Link href="/carriers" onClick={() => setOpen(false)}>Carriers</Link>
           <Link href="/onboarding" onClick={() => setOpen(false)}>Agent Portal</Link>
           <Link href="/quote" onClick={() => setOpen(false)} className="btn-gold text-center">Get a Quote</Link>
         </div>

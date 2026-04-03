@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   Users, FileText, TrendingUp, Home, Car, Heart,
   RefreshCw, CheckCircle2, Clock, MessageSquare, Loader2,
-  ChevronDown, Wifi, WifiOff,
+  ChevronDown, Wifi, WifiOff, Shield, ChevronRight,
 } from 'lucide-react';
 
 type Lead = {
@@ -161,6 +161,40 @@ export default function DashboardPage() {
                 + Onboard Agent
               </Link>
             </div>
+          </div>
+
+          {/* Quick links */}
+          <div className="flex gap-3 mb-8 flex-wrap">
+            <Link href="/carriers" className="card flex items-center gap-3 hover:shadow-md transition-shadow group flex-1 min-w-[200px]">
+              <div className="w-10 h-10 bg-gold/10 rounded-sm flex items-center justify-center flex-shrink-0 group-hover:bg-gold/20 transition-colors">
+                <Shield size={18} className="text-gold" />
+              </div>
+              <div>
+                <div className="font-semibold text-sm text-ink">Carrier Directory</div>
+                <div className="text-xs text-muted">14 carriers · 6 appointed</div>
+              </div>
+              <ChevronRight size={14} className="text-muted ml-auto group-hover:text-gold transition-colors" />
+            </Link>
+            <Link href="/quote" className="card flex items-center gap-3 hover:shadow-md transition-shadow group flex-1 min-w-[200px]">
+              <div className="w-10 h-10 bg-gold/10 rounded-sm flex items-center justify-center flex-shrink-0 group-hover:bg-gold/20 transition-colors">
+                <FileText size={18} className="text-gold" />
+              </div>
+              <div>
+                <div className="font-semibold text-sm text-ink">New Quote</div>
+                <div className="text-xs text-muted">Home, auto, or health</div>
+              </div>
+              <ChevronRight size={14} className="text-muted ml-auto group-hover:text-gold transition-colors" />
+            </Link>
+            <Link href="/onboarding" className="card flex items-center gap-3 hover:shadow-md transition-shadow group flex-1 min-w-[200px]">
+              <div className="w-10 h-10 bg-gold/10 rounded-sm flex items-center justify-center flex-shrink-0 group-hover:bg-gold/20 transition-colors">
+                <Users size={18} className="text-gold" />
+              </div>
+              <div>
+                <div className="font-semibold text-sm text-ink">Onboard Agent</div>
+                <div className="text-xs text-muted">Add to your network</div>
+              </div>
+              <ChevronRight size={14} className="text-muted ml-auto group-hover:text-gold transition-colors" />
+            </Link>
           </div>
 
           {/* Stats */}

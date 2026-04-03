@@ -1,0 +1,186 @@
+export type CarrierLine = 'home' | 'auto' | 'health' | 'life' | 'commercial';
+
+export interface Carrier {
+  id: string;
+  name: string;
+  lines: CarrierLine[];
+  portalUrl: string;
+  quoteUrl: string;
+  rating: string; // AM Best rating
+  notes: string;
+  logo: string; // initials fallback
+  color: string; // brand color for avatar
+}
+
+export const CARRIERS: Carrier[] = [
+  {
+    id: 'state-farm',
+    name: 'State Farm',
+    lines: ['home', 'auto'],
+    portalUrl: 'https://agent.statefarm.com',
+    quoteUrl: 'https://www.statefarm.com/agent/login',
+    rating: 'A++',
+    notes: 'Largest US carrier. Strong home + auto bundle discounts.',
+    logo: 'SF',
+    color: '#cc0000',
+  },
+  {
+    id: 'allstate',
+    name: 'Allstate',
+    lines: ['home', 'auto'],
+    portalUrl: 'https://agent.allstate.com',
+    quoteUrl: 'https://www.allstate.com/agent-portal',
+    rating: 'A+',
+    notes: 'Good multi-policy discounts. Strong digital tools.',
+    logo: 'AL',
+    color: '#0062cc',
+  },
+  {
+    id: 'progressive',
+    name: 'Progressive',
+    lines: ['auto', 'home'],
+    portalUrl: 'https://agent.progressive.com',
+    quoteUrl: 'https://agent.progressive.com/quoting',
+    rating: 'A+',
+    notes: 'Best-in-class auto rates. Snapshot telematics program.',
+    logo: 'PR',
+    color: '#0066cc',
+  },
+  {
+    id: 'travelers',
+    name: 'Travelers',
+    lines: ['home', 'auto', 'commercial'],
+    portalUrl: 'https://agent.travelers.com',
+    quoteUrl: 'https://www.travelers.com/agent-login',
+    rating: 'A++',
+    notes: 'Strong home rates in TX. Good umbrella options.',
+    logo: 'TR',
+    color: '#c8102e',
+  },
+  {
+    id: 'nationwide',
+    name: 'Nationwide',
+    lines: ['home', 'auto', 'life'],
+    portalUrl: 'https://agentportal.nationwide.com',
+    quoteUrl: 'https://agentportal.nationwide.com/quoting',
+    rating: 'A+',
+    notes: 'Vanishing deductible program. Strong life + home combo.',
+    logo: 'NW',
+    color: '#003087',
+  },
+  {
+    id: 'liberty-mutual',
+    name: 'Liberty Mutual',
+    lines: ['home', 'auto'],
+    portalUrl: 'https://agent.libertymutual.com',
+    quoteUrl: 'https://agent.libertymutual.com/quote',
+    rating: 'A',
+    notes: 'New car replacement coverage. 24/7 claims support.',
+    logo: 'LM',
+    color: '#ffcc00',
+  },
+  {
+    id: 'farmers',
+    name: 'Farmers Insurance',
+    lines: ['home', 'auto', 'life', 'commercial'],
+    portalUrl: 'https://www.farmerseagent.com',
+    quoteUrl: 'https://www.farmerseagent.com/quoting',
+    rating: 'A',
+    notes: 'Strong in TX. Good commercial lines availability.',
+    logo: 'FA',
+    color: '#e31837',
+  },
+  {
+    id: 'chubb',
+    name: 'Chubb',
+    lines: ['home', 'commercial'],
+    portalUrl: 'https://producers.chubb.com',
+    quoteUrl: 'https://producers.chubb.com/quote',
+    rating: 'A++',
+    notes: 'High-value homes ($1M+). Masterpiece homeowners policy.',
+    logo: 'CB',
+    color: '#1a1a2e',
+  },
+  {
+    id: 'geico',
+    name: 'GEICO',
+    lines: ['auto'],
+    portalUrl: 'https://agentportal.geico.com',
+    quoteUrl: 'https://agentportal.geico.com/auto',
+    rating: 'A++',
+    notes: 'Competitive auto rates. Military + federal employee discounts.',
+    logo: 'GE',
+    color: '#00857c',
+  },
+  {
+    id: 'unitedhealthcare',
+    name: 'UnitedHealthcare',
+    lines: ['health'],
+    portalUrl: 'https://broker.uhc.com',
+    quoteUrl: 'https://broker.uhc.com/quoting',
+    rating: 'A',
+    notes: 'Largest health insurer. Strong ACA marketplace plans.',
+    logo: 'UH',
+    color: '#005c8a',
+  },
+  {
+    id: 'aetna',
+    name: 'Aetna',
+    lines: ['health', 'life'],
+    portalUrl: 'https://producerworld.aetna.com',
+    quoteUrl: 'https://producerworld.aetna.com/quote',
+    rating: 'A',
+    notes: 'Strong individual + group health. CVS Health backed.',
+    logo: 'AE',
+    color: '#7b2d8b',
+  },
+  {
+    id: 'cigna',
+    name: 'Cigna',
+    lines: ['health', 'life'],
+    portalUrl: 'https://cignaforhcp.cigna.com',
+    quoteUrl: 'https://cignaforhcp.cigna.com/quoting',
+    rating: 'A',
+    notes: 'Global coverage options. Strong dental + vision bundles.',
+    logo: 'CI',
+    color: '#007a8a',
+  },
+  {
+    id: 'bcbs',
+    name: 'BlueCross BlueShield',
+    lines: ['health'],
+    portalUrl: 'https://www.bcbs.com/agents',
+    quoteUrl: 'https://www.bcbs.com/agents/quote',
+    rating: 'A+',
+    notes: 'Widest provider network. Strong PPO options in TX.',
+    logo: 'BC',
+    color: '#00539b',
+  },
+  {
+    id: 'humana',
+    name: 'Humana',
+    lines: ['health', 'life'],
+    portalUrl: 'https://agents.humana.com',
+    quoteUrl: 'https://agents.humana.com/quote',
+    rating: 'A-',
+    notes: 'Strong Medicare Advantage. Good individual health plans.',
+    logo: 'HU',
+    color: '#00833e',
+  },
+];
+
+export const LINE_LABELS: Record<CarrierLine, string> = {
+  home: 'Home',
+  auto: 'Auto',
+  health: 'Health',
+  life: 'Life',
+  commercial: 'Commercial',
+};
+
+export const LINE_COLORS: Record<CarrierLine, string> = {
+  home: 'bg-amber-50 text-amber-700 border-amber-200',
+  auto: 'bg-blue-50 text-blue-700 border-blue-200',
+  health: 'bg-green-50 text-green-700 border-green-200',
+  life: 'bg-purple-50 text-purple-700 border-purple-200',
+  commercial: 'bg-slate-50 text-slate-600 border-slate-200',
+};
