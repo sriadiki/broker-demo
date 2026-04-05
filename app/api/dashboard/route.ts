@@ -16,6 +16,19 @@ const MOCK_AGENTS = [
   { id: 'demo-agent-3', first_name: 'Jennifer', last_name: 'Park', lines_of_authority: ['Health', 'Life'], carrier_appointments: ['UnitedHealthcare', 'Aetna', 'Cigna', 'BlueCross BlueShield', 'Humana', 'Anthem'], status: 'approved', email: 'jennifer@agency.com' },
 ];
 
+// In-memory store for demo assignments (persists during session)
+const demoAssignments: Record<string, string | null> = {
+  '1': 'demo-agent-1',
+  '2': 'demo-agent-1',
+  '3': 'demo-agent-2',
+  '4': null,
+  '5': 'demo-agent-2',
+};
+
+const demoStatuses: Record<string, string> = {
+  '1': 'new', '2': 'contacted', '3': 'quoted', '4': 'new', '5': 'new',
+};
+
 function getAuthUser(req: Request) {
   const cookie = req.headers.get('cookie') ?? '';
   const match = cookie.match(/auth-user=([^;]+)/);
@@ -28,11 +41,16 @@ export async function GET(req: Request) {
   const hasSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!hasSupabase) {
-    // Filter mock data by role
-    const leads = authUser?.role === 'agent'
-      ? MOCK_LEADS.filter(l => l.assigned_to === authUser.id)
-      : MOCK_LEADS;
-    return NextResponse.json({ leads, agents: MOCK_AGENTS, source: 'mock', role: authUser?.role ?? 'admin' });
+    // Apply in-memory demo mutations
+    const leads = MOCK_LEADS.map(l => ({
+      ...l,
+      assigned_to: demoAssignments[l.id] ?? l.assigned_to,
+      status: demoStatuses[l.id] ?? l.status,
+    }));
+    const filtered = authUser?.role === 'agent'
+      ? leads.filter(l => l.assigned_to === authUser.id)
+      : leads;
+    return NextResponse.json({ leads: filtered, agents: MOCK_AGENTS, source: 'mock', role: authUser?.role ?? 'admin' });
   }
 
   try {
@@ -45,7 +63,6 @@ export async function GET(req: Request) {
       .order('created_at', { ascending: false })
       .limit(50);
 
-    // Agents only see their own leads
     if (authUser?.role === 'agent') {
       leadsQuery = leadsQuery.eq('assigned_to', authUser.id);
     }
@@ -65,24 +82,42 @@ export async function GET(req: Request) {
       role: authUser?.role ?? 'admin',
     });
   } catch (err: any) {
-    const leads = authUser?.role === 'agent'
-      ? MOCK_LEADS.filter(l => l.assigned_to === authUser.id)
-      : MOCK_LEADS;
-    return NextResponse.json({ leads, agents: MOCK_AGENTS, source: 'mock_fallback', role: authUser?.role ?? 'admin' });
+    const leads = MOCK_LEADS.map(l => ({
+      ...l,
+      assigned_to: demoAssignments[l.id] ?? l.assigned_to,
+      status: demoStatuses[l.id] ?? l.status,
+    }));
+    const filtered = authUser?.role === 'agent'
+      ? leads.filter(l => l.assigned_to === authUser.id)
+      : leads;
+    return NextResponse.json({ leads: filtered, agents: MOCK_AGENTS, source: 'mock_fallback', role: authUser?.role ?? 'admin' });
   }
 }
 
 export async function PATCH(req: Request) {
   const authUser = getAuthUser(req);
-  // Only admins can update agent status; agents can update lead status
   const hasSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!hasSupabase) return NextResponse.json({ ok: true, demo: true });
 
   try {
     const { id, table, updates } = await req.json();
+
+    // Permission checks
     if (table === 'agents' && authUser?.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
+    if (updates.assigned_to !== undefined && authUser?.role !== 'admin') {
+      return NextResponse.json({ error: 'Only admins can assign leads' }, { status: 403 });
+    }
+
+    if (!hasSupabase) {
+      // Apply to in-memory demo store
+      if (table === 'leads') {
+        if (updates.assigned_to !== undefined) demoAssignments[id] = updates.assigned_to;
+        if (updates.status !== undefined) demoStatuses[id] = updates.status;
+      }
+      return NextResponse.json({ ok: true, demo: true });
+    }
+
     const { supabaseServer } = await import('@/lib/supabase');
     const db = supabaseServer();
     const { error } = await db.from(table).update(updates).eq('id', id);

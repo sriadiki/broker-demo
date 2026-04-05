@@ -7,14 +7,14 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import {
   Users, FileText, TrendingUp, Home, Car, Heart,
-  RefreshCw, CheckCircle2, Loader2,
+  RefreshCw, CheckCircle2, Loader2, UserCheck,
   ChevronDown, Wifi, WifiOff, Shield, ChevronRight,
 } from 'lucide-react';
 
 type Lead = {
   id: string; name: string; email: string; product_type: string;
   status: string; estimate_low: number; estimate_high: number;
-  created_at: string; assigned_to?: string;
+  created_at: string; assigned_to: string | null;
 };
 type Agent = {
   id: string; first_name: string; last_name: string; email: string;
@@ -68,28 +68,26 @@ export default function DashboardPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) router.replace('/login');
   }, [authLoading, user, router]);
 
-  // Auto-refresh every 30s
   useEffect(() => {
     const interval = setInterval(() => fetchData(true), 30000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  async function updateLeadStatus(id: string, status: string) {
+  async function updateLead(id: string, updates: Record<string, string | null>) {
     setUpdatingId(id);
     try {
       await fetch('/api/dashboard', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, table: 'leads', updates: { status } }),
+        body: JSON.stringify({ id, table: 'leads', updates }),
       });
       setData(prev => prev ? {
         ...prev,
-        leads: prev.leads.map(l => l.id === id ? { ...l, status } : l),
+        leads: prev.leads.map(l => l.id === id ? { ...l, ...updates } : l),
       } : prev);
     } finally {
       setUpdatingId(null);
@@ -115,13 +113,15 @@ export default function DashboardPage() {
 
   const leads = data?.leads ?? [];
   const agents = data?.agents ?? [];
+  const approvedAgents = agents.filter(a => a.status === 'approved');
   const filteredLeads = filterStatus === 'all' ? leads : leads.filter(l => l.status === filterStatus);
   const isLive = data?.source === 'live';
+  const isAdmin = user?.role === 'admin';
 
   const stats = [
     { label: 'Total Leads', value: leads.length, icon: FileText, sub: `${leads.filter(l => l.status === 'new').length} new` },
-    { label: 'Active Agents', value: agents.filter(a => a.status === 'approved').length, icon: Users, sub: `${agents.filter(a => a.status === 'pending').length} pending` },
-    { label: 'Quotes Sent', value: leads.filter(l => ['quoted', 'closed'].includes(l.status)).length, icon: TrendingUp, sub: 'This month' },
+    { label: 'Assigned', value: leads.filter(l => l.assigned_to).length, icon: UserCheck, sub: `${leads.filter(l => !l.assigned_to).length} unassigned` },
+    { label: 'Active Agents', value: approvedAgents.length, icon: Users, sub: `${agents.filter(a => a.status === 'pending').length} pending` },
     { label: 'Conversion', value: leads.length ? `${Math.round(leads.filter(l => l.status === 'closed').length / leads.length * 100)}%` : '—', icon: CheckCircle2, sub: 'Closed rate' },
   ];
 
@@ -149,9 +149,9 @@ export default function DashboardPage() {
           <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
             <div>
               <div className="section-label mb-1">
-                {user.role === 'admin' ? 'Broker Admin' : 'Agent Portal'}
+                {isAdmin ? 'Broker Admin' : 'Agent Portal'}
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="font-display text-3xl font-bold text-ink">
                   Welcome, {user.name.split(' ')[0]}
                 </h1>
@@ -160,41 +160,36 @@ export default function DashboardPage() {
                   {isLive ? <Wifi size={11} /> : <WifiOff size={11} />}
                   {isLive ? 'Live data' : 'Demo data'}
                 </span>
-                {user.role === 'agent' && (
+                {!isAdmin && (
                   <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full font-medium">
-                    Showing your leads only
+                    Your leads only
                   </span>
                 )}
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => fetchData(true)}
-                disabled={refreshing}
-                className="btn-outline text-sm py-2 gap-2"
-              >
-                <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
-                Refresh
+              <button onClick={() => fetchData(true)} disabled={refreshing} className="btn-outline text-sm py-2 gap-2">
+                <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} /> Refresh
               </button>
-              <Link href="/onboarding" className="btn-gold text-sm py-2">
-                + Onboard Agent
-              </Link>
+              {isAdmin && (
+                <Link href="/onboarding" className="btn-gold text-sm py-2">+ Onboard Agent</Link>
+              )}
             </div>
           </div>
 
           {/* Quick links */}
           <div className="flex gap-3 mb-8 flex-wrap">
-            <Link href="/carriers" className="card flex items-center gap-3 hover:shadow-md transition-shadow group flex-1 min-w-[200px]">
+            <Link href="/carriers" className="card flex items-center gap-3 hover:shadow-md transition-shadow group flex-1 min-w-[180px]">
               <div className="w-10 h-10 bg-gold/10 rounded-sm flex items-center justify-center flex-shrink-0 group-hover:bg-gold/20 transition-colors">
                 <Shield size={18} className="text-gold" />
               </div>
               <div>
                 <div className="font-semibold text-sm text-ink">Carrier Directory</div>
-                <div className="text-xs text-muted">14 carriers · 6 appointed</div>
+                <div className="text-xs text-muted">14 carriers · your appointments</div>
               </div>
               <ChevronRight size={14} className="text-muted ml-auto group-hover:text-gold transition-colors" />
             </Link>
-            <Link href="/quote" className="card flex items-center gap-3 hover:shadow-md transition-shadow group flex-1 min-w-[200px]">
+            <Link href="/quote" className="card flex items-center gap-3 hover:shadow-md transition-shadow group flex-1 min-w-[180px]">
               <div className="w-10 h-10 bg-gold/10 rounded-sm flex items-center justify-center flex-shrink-0 group-hover:bg-gold/20 transition-colors">
                 <FileText size={18} className="text-gold" />
               </div>
@@ -204,16 +199,18 @@ export default function DashboardPage() {
               </div>
               <ChevronRight size={14} className="text-muted ml-auto group-hover:text-gold transition-colors" />
             </Link>
-            <Link href="/onboarding" className="card flex items-center gap-3 hover:shadow-md transition-shadow group flex-1 min-w-[200px]">
-              <div className="w-10 h-10 bg-gold/10 rounded-sm flex items-center justify-center flex-shrink-0 group-hover:bg-gold/20 transition-colors">
-                <Users size={18} className="text-gold" />
-              </div>
-              <div>
-                <div className="font-semibold text-sm text-ink">Onboard Agent</div>
-                <div className="text-xs text-muted">Add to your network</div>
-              </div>
-              <ChevronRight size={14} className="text-muted ml-auto group-hover:text-gold transition-colors" />
-            </Link>
+            {isAdmin && (
+              <Link href="/onboarding" className="card flex items-center gap-3 hover:shadow-md transition-shadow group flex-1 min-w-[180px]">
+                <div className="w-10 h-10 bg-gold/10 rounded-sm flex items-center justify-center flex-shrink-0 group-hover:bg-gold/20 transition-colors">
+                  <Users size={18} className="text-gold" />
+                </div>
+                <div>
+                  <div className="font-semibold text-sm text-ink">Onboard Agent</div>
+                  <div className="text-xs text-muted">Add to your network</div>
+                </div>
+                <ChevronRight size={14} className="text-muted ml-auto group-hover:text-gold transition-colors" />
+              </Link>
+            )}
           </div>
 
           {/* Stats */}
@@ -233,20 +230,30 @@ export default function DashboardPage() {
           {/* Tabs */}
           <div className="flex border-b border-ink/10 mb-6 gap-6">
             {(['leads', 'agents'] as const).map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`pb-3 text-sm font-semibold capitalize tracking-wide transition-colors border-b-2 -mb-px
-                  ${activeTab === tab ? 'border-gold text-ink' : 'border-transparent text-muted hover:text-ink'}`}
-              >
-                {tab} ({tab === 'leads' ? leads.length : agents.length})
-              </button>
+              isAdmin || tab === 'leads' ? (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`pb-3 text-sm font-semibold capitalize tracking-wide transition-colors border-b-2 -mb-px
+                    ${activeTab === tab ? 'border-gold text-ink' : 'border-transparent text-muted hover:text-ink'}`}
+                >
+                  {tab} ({tab === 'leads' ? leads.length : agents.length})
+                </button>
+              ) : null
             ))}
           </div>
 
           {/* LEADS TAB */}
           {activeTab === 'leads' && (
             <div>
+              {/* Unassigned alert — admin only */}
+              {isAdmin && leads.filter(l => !l.assigned_to).length > 0 && (
+                <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-sm px-4 py-3 rounded-sm mb-4">
+                  <UserCheck size={15} />
+                  <span><strong>{leads.filter(l => !l.assigned_to).length} leads</strong> are unassigned — assign them to an agent below.</span>
+                </div>
+              )}
+
               {/* Filter bar */}
               <div className="flex items-center gap-2 mb-4 flex-wrap">
                 {['all', ...LEAD_STATUSES].map(s => (
@@ -267,74 +274,107 @@ export default function DashboardPage() {
                     No leads yet. <Link href="/quote" className="text-gold hover:underline">Submit a test quote</Link> to see it here.
                   </div>
                 ) : (
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-ink/5 bg-ink/2">
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Lead</th>
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden md:table-cell">Product</th>
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden md:table-cell">Estimate</th>
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Status</th>
-                        <th className="text-left px-5 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden sm:table-cell">Time</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredLeads.map((lead, i) => {
-                        const Icon = productIcon[lead.product_type] ?? FileText;
-                        return (
-                          <tr key={lead.id} className={`border-b border-ink/5 last:border-0 hover:bg-gold/3 transition-colors ${i % 2 === 0 ? '' : 'bg-white/30'}`}>
-                            <td className="px-5 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-gold/10 rounded-full flex items-center justify-center flex-shrink-0">
-                                  <Icon size={13} className="text-gold" />
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm min-w-[700px]">
+                      <thead>
+                        <tr className="border-b border-ink/5 bg-ink/2">
+                          <th className="text-left px-5 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Lead</th>
+                          <th className="text-left px-5 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden md:table-cell">Product</th>
+                          <th className="text-left px-5 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden md:table-cell">Estimate</th>
+                          <th className="text-left px-5 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Status</th>
+                          {isAdmin && (
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Assigned To</th>
+                          )}
+                          <th className="text-left px-5 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden sm:table-cell">Time</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredLeads.map((lead, i) => {
+                          const Icon = productIcon[lead.product_type] ?? FileText;
+                          const assignedAgent = agents.find(a => a.id === lead.assigned_to);
+                          return (
+                            <tr key={lead.id} className={`border-b border-ink/5 last:border-0 hover:bg-gold/3 transition-colors ${i % 2 === 0 ? '' : 'bg-white/30'}`}>
+                              <td className="px-5 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 bg-gold/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <Icon size={13} className="text-gold" />
+                                  </div>
+                                  <div>
+                                    <div className="font-medium text-ink">{lead.name}</div>
+                                    <div className="text-xs text-muted">{lead.email}</div>
+                                  </div>
                                 </div>
-                                <div>
-                                  <div className="font-medium text-ink">{lead.name}</div>
-                                  <div className="text-xs text-muted">{lead.email}</div>
+                              </td>
+                              <td className="px-5 py-4 hidden md:table-cell">
+                                <span className="capitalize text-slate">{lead.product_type}</span>
+                              </td>
+                              <td className="px-5 py-4 hidden md:table-cell text-slate">
+                                {lead.estimate_low && lead.estimate_high
+                                  ? `$${lead.estimate_low}–$${lead.estimate_high}/mo`
+                                  : '—'}
+                              </td>
+                              <td className="px-5 py-4">
+                                <div className="relative inline-block">
+                                  <select
+                                    value={lead.status}
+                                    disabled={updatingId === lead.id}
+                                    onChange={e => updateLead(lead.id, { status: e.target.value })}
+                                    className={`text-xs font-semibold px-2.5 py-1 rounded-full border appearance-none pr-6 cursor-pointer
+                                      focus:outline-none transition-colors ${STATUS_STYLES[lead.status] ?? STATUS_STYLES.new}`}
+                                  >
+                                    {LEAD_STATUSES.map(s => (
+                                      <option key={s} value={s} className="bg-white text-ink capitalize">{s}</option>
+                                    ))}
+                                  </select>
+                                  {updatingId === lead.id
+                                    ? <Loader2 size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 animate-spin" />
+                                    : <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                  }
                                 </div>
-                              </div>
-                            </td>
-                            <td className="px-5 py-4 hidden md:table-cell">
-                              <span className="capitalize text-slate">{lead.product_type}</span>
-                            </td>
-                            <td className="px-5 py-4 hidden md:table-cell text-slate">
-                              {lead.estimate_low && lead.estimate_high
-                                ? `$${lead.estimate_low}–$${lead.estimate_high}/mo`
-                                : '—'}
-                            </td>
-                            <td className="px-5 py-4">
-                              <div className="relative inline-block">
-                                <select
-                                  value={lead.status}
-                                  disabled={updatingId === lead.id}
-                                  onChange={e => updateLeadStatus(lead.id, e.target.value)}
-                                  className={`text-xs font-semibold px-2.5 py-1 rounded-full border appearance-none pr-6 cursor-pointer
-                                    focus:outline-none transition-colors ${STATUS_STYLES[lead.status] ?? STATUS_STYLES.new}`}
-                                >
-                                  {LEAD_STATUSES.map(s => (
-                                    <option key={s} value={s} className="bg-white text-ink capitalize">{s}</option>
-                                  ))}
-                                </select>
-                                {updatingId === lead.id
-                                  ? <Loader2 size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 animate-spin" />
-                                  : <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                                }
-                              </div>
-                            </td>
-                            <td className="px-5 py-4 hidden sm:table-cell text-xs text-muted">
-                              {timeAgo(lead.created_at)}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                              </td>
+                              {isAdmin && (
+                                <td className="px-5 py-4">
+                                  <div className="relative inline-block min-w-[140px]">
+                                    <select
+                                      value={lead.assigned_to ?? ''}
+                                      disabled={updatingId === lead.id}
+                                      onChange={e => updateLead(lead.id, { assigned_to: e.target.value || null })}
+                                      className={`w-full text-xs font-medium px-2.5 py-1.5 rounded-sm border appearance-none pr-6 cursor-pointer
+                                        focus:outline-none focus:border-gold transition-colors
+                                        ${lead.assigned_to
+                                          ? 'bg-white border-ink/15 text-ink'
+                                          : 'bg-amber-50 border-amber-200 text-amber-700'}`}
+                                    >
+                                      <option value="">Unassigned</option>
+                                      {approvedAgents.map(a => (
+                                        <option key={a.id} value={a.id}>
+                                          {a.first_name} {a.last_name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    {updatingId === `assign-${lead.id}`
+                                      ? <Loader2 size={10} className="absolute right-2 top-1/2 -translate-y-1/2 animate-spin" />
+                                      : <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-muted" />
+                                    }
+                                  </div>
+                                </td>
+                              )}
+                              <td className="px-5 py-4 hidden sm:table-cell text-xs text-muted">
+                                {timeAgo(lead.created_at)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* AGENTS TAB */}
-          {activeTab === 'agents' && (
+          {/* AGENTS TAB — admin only */}
+          {activeTab === 'agents' && isAdmin && (
             <div>
               <div className="card p-0 overflow-hidden">
                 {agents.length === 0 ? (
@@ -348,47 +388,64 @@ export default function DashboardPage() {
                         <th className="text-left px-5 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Agent</th>
                         <th className="text-left px-5 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden md:table-cell">Lines</th>
                         <th className="text-left px-5 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden md:table-cell">Carriers</th>
+                        <th className="text-left px-5 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden md:table-cell">Leads</th>
                         <th className="text-left px-5 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Status</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {agents.map((agent, i) => (
-                        <tr key={agent.id} className={`border-b border-ink/5 last:border-0 hover:bg-gold/3 transition-colors ${i % 2 === 0 ? '' : 'bg-white/30'}`}>
-                          <td className="px-5 py-4">
-                            <div className="font-medium text-ink">{agent.first_name} {agent.last_name}</div>
-                            <div className="text-xs text-muted">{agent.email}</div>
-                          </td>
-                          <td className="px-5 py-4 hidden md:table-cell">
-                            <div className="flex flex-wrap gap-1">
-                              {(agent.lines_of_authority ?? []).slice(0, 3).map(l => (
-                                <span key={l} className="text-xs bg-ink/5 text-slate px-2 py-0.5 rounded-full">{l}</span>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="px-5 py-4 hidden md:table-cell text-slate">
-                            {(agent.carrier_appointments ?? []).length} carriers
-                          </td>
-                          <td className="px-5 py-4">
-                            <div className="relative inline-block">
-                              <select
-                                value={agent.status}
-                                disabled={updatingId === agent.id}
-                                onChange={e => updateAgentStatus(agent.id, e.target.value)}
-                                className={`text-xs font-semibold px-2.5 py-1 rounded-full border appearance-none pr-6 cursor-pointer
-                                  focus:outline-none transition-colors ${STATUS_STYLES[agent.status] ?? STATUS_STYLES.pending}`}
-                              >
-                                {['pending', 'approved', 'rejected'].map(s => (
-                                  <option key={s} value={s} className="bg-white text-ink capitalize">{s}</option>
+                      {agents.map((agent, i) => {
+                        const agentLeads = leads.filter(l => l.assigned_to === agent.id);
+                        return (
+                          <tr key={agent.id} className={`border-b border-ink/5 last:border-0 hover:bg-gold/3 transition-colors ${i % 2 === 0 ? '' : 'bg-white/30'}`}>
+                            <td className="px-5 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-gold/10 rounded-full flex items-center justify-center text-gold font-bold text-xs flex-shrink-0">
+                                  {agent.first_name.charAt(0)}{agent.last_name.charAt(0)}
+                                </div>
+                                <div>
+                                  <div className="font-medium text-ink">{agent.first_name} {agent.last_name}</div>
+                                  <div className="text-xs text-muted">{agent.email}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 hidden md:table-cell">
+                              <div className="flex flex-wrap gap-1">
+                                {(agent.lines_of_authority ?? []).slice(0, 2).map(l => (
+                                  <span key={l} className="text-xs bg-ink/5 text-slate px-2 py-0.5 rounded-full">{l}</span>
                                 ))}
-                              </select>
-                              {updatingId === agent.id
-                                ? <Loader2 size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 animate-spin" />
-                                : <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                              }
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 hidden md:table-cell text-slate text-sm">
+                              {(agent.carrier_appointments ?? []).length} carriers
+                            </td>
+                            <td className="px-5 py-4 hidden md:table-cell">
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border
+                                ${agentLeads.length > 0 ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-ink/5 text-muted border-ink/10'}`}>
+                                {agentLeads.length} lead{agentLeads.length !== 1 ? 's' : ''}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4">
+                              <div className="relative inline-block">
+                                <select
+                                  value={agent.status}
+                                  disabled={updatingId === agent.id}
+                                  onChange={e => updateAgentStatus(agent.id, e.target.value)}
+                                  className={`text-xs font-semibold px-2.5 py-1 rounded-full border appearance-none pr-6 cursor-pointer
+                                    focus:outline-none transition-colors ${STATUS_STYLES[agent.status] ?? STATUS_STYLES.pending}`}
+                                >
+                                  {['pending', 'approved', 'rejected'].map(s => (
+                                    <option key={s} value={s} className="bg-white text-ink capitalize">{s}</option>
+                                  ))}
+                                </select>
+                                {updatingId === agent.id
+                                  ? <Loader2 size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 animate-spin" />
+                                  : <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                }
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}
