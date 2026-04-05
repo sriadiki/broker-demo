@@ -78,9 +78,9 @@ export async function GET(req: Request) {
     ]);
 
     return NextResponse.json({
-      leads: leadsRes.data ?? [],
-      agents: agentsRes.data ?? [],
-      source: 'live',
+      leads: leadsRes.data && leadsRes.data.length > 0 ? leadsRes.data : MOCK_LEADS,
+      agents: agentsRes.data && agentsRes.data.length > 0 ? agentsRes.data : MOCK_AGENTS,
+      source: leadsRes.data && leadsRes.data.length > 0 ? 'live' : 'mock',
       role: authUser?.role ?? 'admin',
     });
   } catch (err: any) {
