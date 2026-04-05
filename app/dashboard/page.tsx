@@ -57,7 +57,7 @@ export default function DashboardPage() {
     if (!quiet) setLoading(true);
     else setRefreshing(true);
     try {
-      const res = await fetch('/api/dashboard', { cache: 'no-store' });
+      const res = await fetch('/api/dashboard', { cache: 'no-store', credentials: 'include' });
       const json = await res.json();
       setData(json);
     } finally {
@@ -83,6 +83,7 @@ export default function DashboardPage() {
       await fetch('/api/dashboard', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ id, table: 'leads', updates }),
       });
       setData(prev => prev ? {
@@ -100,6 +101,7 @@ export default function DashboardPage() {
       await fetch('/api/dashboard', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ id, table: 'agents', updates: { status } }),
       });
       setData(prev => prev ? {

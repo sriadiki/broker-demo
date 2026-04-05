@@ -47,10 +47,12 @@ export async function GET(req: Request) {
       assigned_to: demoAssignments[l.id] ?? l.assigned_to,
       status: demoStatuses[l.id] ?? l.status,
     }));
+    // Default to showing all leads if no auth cookie (avoids empty state)
     const filtered = authUser?.role === 'agent'
       ? leads.filter(l => l.assigned_to === authUser.id)
       : leads;
-    return NextResponse.json({ leads: filtered, agents: MOCK_AGENTS, source: 'mock', role: authUser?.role ?? 'admin' });
+    const role = authUser?.role ?? 'admin';
+    return NextResponse.json({ leads: filtered, agents: MOCK_AGENTS, source: 'mock', role });
   }
 
   try {

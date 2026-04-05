@@ -47,7 +47,7 @@ export default function CarriersPage() {
       setLoadingAppointments(true);
       try {
         // Try to get real appointments from Supabase via dashboard API
-        const res = await fetch('/api/dashboard', { cache: 'no-store' });
+        const res = await fetch('/api/dashboard', { cache: 'no-store', credentials: 'include' });
         const data = await res.json();
 
         if (user!.role === 'admin') {
