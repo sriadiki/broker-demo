@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Home, Car, Heart, Shield, Star, ChevronRight, Phone } from 'lucide-react';
+import { Home, Car, Heart, Shield, Star, ChevronRight, Phone, MapPin } from 'lucide-react';
 
 const services = [
   { icon: Home, label: 'Home Insurance', desc: 'Protect your biggest investment with comprehensive homeowner coverage from top-rated carriers.', type: 'home' },
@@ -199,6 +199,47 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Cities SEO section */}
+        <section className="py-20 max-w-6xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <div className="section-label mb-3">Service Area</div>
+            <h2 className="font-display text-4xl font-bold text-ink">
+              Serving North Texas communities
+            </h2>
+            <p className="text-slate mt-3 max-w-xl mx-auto">
+              Local knowledge matters in insurance. Find rates, carrier info, and answers specific to your city.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {[
+              { slug: 'frisco-tx', city: 'Frisco', desc: 'Home · Auto · Health' },
+              { slug: 'mckinney-tx', city: 'McKinney', desc: 'Home · Auto · Health' },
+              { slug: 'allen-tx', city: 'Allen', desc: 'Home · Auto · Health' },
+              { slug: 'plano-tx', city: 'Plano', desc: 'Home · Auto · Health' },
+              { slug: 'prosper-tx', city: 'Prosper', desc: 'Home · Auto · Health' },
+              { slug: 'the-colony-tx', city: 'The Colony', desc: 'Home · Auto · Health' },
+            ].map(({ slug, city, desc }) => (
+              <a
+                key={slug}
+                href={`/insurance/${slug}`}
+                className="card hover:border-gold/30 hover:shadow-md transition-all group flex items-center gap-3"
+              >
+                <MapPin size={16} className="text-gold flex-shrink-0" />
+                <div>
+                  <div className="font-semibold text-sm text-ink group-hover:text-gold transition-colors">{city}, TX</div>
+                  <div className="text-xs text-muted">{desc}</div>
+                </div>
+                <ChevronRight size={13} className="text-muted ml-auto group-hover:text-gold transition-colors" />
+              </a>
+            ))}
+          </div>
+          <div className="text-center mt-6">
+            <a href="/insurance" className="text-gold text-sm font-semibold hover:underline">
+              View all cities →
+            </a>
           </div>
         </section>
 

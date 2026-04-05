@@ -1,23 +1,26 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
+import { useAuth } from '@/lib/auth-context';
 import {
   Users, FileText, TrendingUp, Home, Car, Heart,
-  RefreshCw, CheckCircle2, Clock, MessageSquare, Loader2,
+  RefreshCw, CheckCircle2, Loader2,
   ChevronDown, Wifi, WifiOff, Shield, ChevronRight,
 } from 'lucide-react';
 
 type Lead = {
   id: string; name: string; email: string; product_type: string;
-  status: string; estimate_low: number; estimate_high: number; created_at: string;
+  status: string; estimate_low: number; estimate_high: number;
+  created_at: string; assigned_to?: string;
 };
 type Agent = {
   id: string; first_name: string; last_name: string; email: string;
   lines_of_authority: string[]; carrier_appointments: string[]; status: string;
 };
-type DashData = { leads: Lead[]; agents: Agent[]; source: string };
+type DashData = { leads: Lead[]; agents: Agent[]; source: string; role: string };
 
 const productIcon: Record<string, typeof Home> = { home: Home, auto: Car, health: Heart };
 
@@ -41,6 +44,8 @@ function timeAgo(iso: string) {
 }
 
 export default function DashboardPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [data, setData] = useState<DashData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -62,6 +67,11 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) router.replace('/login');
+  }, [authLoading, user, router]);
 
   // Auto-refresh every 30s
   useEffect(() => {
@@ -115,7 +125,7 @@ export default function DashboardPage() {
     { label: 'Conversion', value: leads.length ? `${Math.round(leads.filter(l => l.status === 'closed').length / leads.length * 100)}%` : '—', icon: CheckCircle2, sub: 'Closed rate' },
   ];
 
-  if (loading) {
+  if (authLoading || loading || !user) {
     return (
       <>
         <Navbar />
@@ -138,14 +148,23 @@ export default function DashboardPage() {
           {/* Header */}
           <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
             <div>
-              <div className="section-label mb-1">Broker Portal</div>
+              <div className="section-label mb-1">
+                {user.role === 'admin' ? 'Broker Admin' : 'Agent Portal'}
+              </div>
               <div className="flex items-center gap-3">
-                <h1 className="font-display text-3xl font-bold text-ink">Dashboard</h1>
+                <h1 className="font-display text-3xl font-bold text-ink">
+                  Welcome, {user.name.split(' ')[0]}
+                </h1>
                 <span className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border
                   ${isLive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                   {isLive ? <Wifi size={11} /> : <WifiOff size={11} />}
                   {isLive ? 'Live data' : 'Demo data'}
                 </span>
+                {user.role === 'agent' && (
+                  <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full font-medium">
+                    Showing your leads only
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-3">
